@@ -21,6 +21,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 
+@Suppress("DEPRECATION")
 class FollowAIEngineService : AccessibilityService() {
 
     override fun onServiceConnected() {
