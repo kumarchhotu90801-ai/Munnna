@@ -32,8 +32,17 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: Ensure Secrets Config Exists
+        run: |
+          if [ ! -f ".env" ] && [ -f ".env.example" ]; then
+            cp .env.example .env
+          fi
+
       - name: Make Gradle Wrapper Executable
         run: chmod +x gradlew
+
+      - name: Verify Gradle Version
+        run: ./gradlew --version
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
