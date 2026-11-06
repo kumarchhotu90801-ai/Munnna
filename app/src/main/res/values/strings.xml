@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Follow AI Auto</string>
+    <string name="accessibility_service_name">Follow AI Automation Engine</string>
+    <string name="accessibility_service_description">Automates bulk prompt input and video generation on web platforms like Follow AI within your mobile browser.</string>
+</resources>

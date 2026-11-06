@@ -1,0 +1,6 @@
+{
+  "name": "Follow AI Auto",
+  "description": "Android automation tool for bulk video generation on Follow AI in mobile browsers using AccessibilityService and floating overlay.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
