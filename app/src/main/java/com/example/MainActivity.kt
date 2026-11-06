@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -51,9 +52,13 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.automirrored.filled.PlaylistAddCheck
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Layers
@@ -493,8 +498,24 @@ fun DashboardTab(
     onImportFile: () -> Unit,
     onNavigateToGuide: () -> Unit
 ) {
+    val context = LocalContext.current
     val state by AutomationEngine.state.collectAsState()
     val allPermissionsReady = hasOverlayPermission && isAccessibilityConnected
+
+    var promptInputText by remember {
+        mutableStateOf(state.prompts.joinToString("\n") { it.text })
+    }
+
+    androidx.compose.runtime.LaunchedEffect(state.prompts) {
+        if (state.prompts.isNotEmpty() && promptInputText.isBlank()) {
+            promptInputText = state.prompts.joinToString("\n") { it.text }
+        }
+    }
+
+    val parsedCount = remember(promptInputText) {
+        if (promptInputText.isBlank()) 0
+        else com.example.model.PromptSanitizer.sanitize(promptInputText).size
+    }
 
     // Pulse animation for active overlay state
     val infiniteTransition = rememberInfiniteTransition(label = "hero_pulse")
@@ -767,6 +788,242 @@ fun DashboardTab(
                     icon = Icons.Default.Notifications,
                     tag = "notifications_permission_card"
                 )
+            }
+        }
+
+        // Module 6: Direct Bulk Prompts Input Card
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("bulk_prompts_input_card"),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                border = CardDefaults.outlinedCardBorder().copy(
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            NeonCyan.copy(alpha = 0.8f),
+                            NeonPurple.copy(alpha = 0.6f)
+                        )
+                    ),
+                    width = 1.5.dp
+                )
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(NeonCyan.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                                    .border(1.dp, NeonCyan.copy(alpha = 0.4f), RoundedCornerShape(8.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.EditNote,
+                                    contentDescription = null,
+                                    tint = NeonCyan,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Bulk Prompts (1 prompt per line)",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                )
+                                Text(
+                                    text = "Direct text paste box • Auto-split by newline",
+                                    color = Color(0xFF94A3B8),
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+
+                        // Ready Badge
+                        Box(
+                            modifier = Modifier
+                                .background(DarkNavyBg, RoundedCornerShape(50.dp))
+                                .border(
+                                    1.dp,
+                                    if (parsedCount > 0) EmeraldGreen else BorderDark,
+                                    RoundedCornerShape(50.dp)
+                                )
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = if (parsedCount > 0) "$parsedCount READY" else "EMPTY",
+                                color = if (parsedCount > 0) EmeraldGreen else Color.Gray,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Multi-line Text Field (Min 6 lines, scrollable, cyberpunk styling)
+                    OutlinedTextField(
+                        value = promptInputText,
+                        onValueChange = { promptInputText = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 160.dp, max = 250.dp)
+                            .testTag("dashboard_bulk_prompts_input"),
+                        placeholder = {
+                            Text(
+                                text = "Paste your bulk prompt list here (one prompt per line)...\n\nExample:\nUltra-realistic shot of a cyberpunk speeder in rainy Neo-Tokyo, 4K HDR\nSci-fi deep space station orbiting a giant ringed gas planet\nCinematic drone view flying through majestic snowy mountain peaks",
+                                color = Color(0xFF64748B),
+                                fontSize = 12.sp,
+                                lineHeight = 18.sp
+                            )
+                        },
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp,
+                            fontFamily = FontFamily.Monospace
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = NeonCyan,
+                            unfocusedBorderColor = BorderDark,
+                            focusedContainerColor = DarkNavyBg,
+                            unfocusedContainerColor = DarkNavyBg,
+                            cursorColor = NeonCyan
+                        ),
+                        minLines = 6,
+                        maxLines = 10
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Quick Actions Row: "Clear All" & "Queue Prompts (X ready)"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                promptInputText = ""
+                            },
+                            modifier = Modifier
+                                .weight(0.35f)
+                                .height(46.dp)
+                                .testTag("clear_prompts_button"),
+                            shape = RoundedCornerShape(10.dp),
+                            border = ButtonDefaults.outlinedButtonBorder.copy(
+                                brush = Brush.horizontalGradient(listOf(BorderDark, BorderDark))
+                            ),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Color.LightGray
+                            ),
+                            enabled = promptInputText.isNotEmpty()
+                        ) {
+                            Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Clear All", fontSize = 12.sp)
+                        }
+
+                        Button(
+                            onClick = {
+                                if (parsedCount > 0) {
+                                    AutomationEngine.loadPrompts(promptInputText)
+                                    Toast.makeText(context, "Queued $parsedCount prompts into active runner!", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(0.65f)
+                                .height(46.dp)
+                                .testTag("queue_prompts_button"),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (parsedCount > 0) NeonCyan else SurfaceDarkElevated,
+                                contentColor = if (parsedCount > 0) Color.Black else Color.Gray,
+                                disabledContainerColor = SurfaceDarkElevated,
+                                disabledContentColor = Color.Gray
+                            ),
+                            enabled = parsedCount > 0
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.AutoMirrored.Filled.PlaylistAddCheck, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (parsedCount > 0) "Queue Prompts ($parsedCount ready)" else "Queue Prompts (0 ready)",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    // Helper Row: "Paste from Clipboard", "Active Queue indicator", and Launch runner shortcut
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(
+                            onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clipData = clipboard.primaryClip
+                                if (clipData != null && clipData.itemCount > 0) {
+                                    val text = clipData.getItemAt(0).text?.toString() ?: ""
+                                    if (text.isNotBlank()) {
+                                        promptInputText = if (promptInputText.isBlank()) text else "$promptInputText\n$text"
+                                        Toast.makeText(context, "Pasted from clipboard!", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Default.ContentPaste, contentDescription = null, tint = ElectricBlue, modifier = Modifier.size(15.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Paste from Clipboard", color = ElectricBlue, fontSize = 11.sp)
+                        }
+
+                        if (state.prompts.isNotEmpty()) {
+                            Text(
+                                text = "Engine Queue: ${state.prompts.size} prompts",
+                                color = EmeraldGreen,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // Immediate runner launch action right below the input box
+                    if (!isOverlayRunning && allPermissionsReady) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Button(
+                            onClick = onToggleOverlay,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                                .testTag("quick_launch_overlay_button"),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = SurfaceDarkElevated
+                            ),
+                            border = ButtonDefaults.outlinedButtonBorder.copy(
+                                brush = Brush.horizontalGradient(listOf(NeonCyan, NeonPurple))
+                            )
+                        ) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Launch Floating Runner Now", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
             }
         }
 
