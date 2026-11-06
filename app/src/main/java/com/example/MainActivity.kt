@@ -288,15 +288,15 @@ fun MainScreen() {
                             hasNotificationPermission = hasNotificationPermission,
                             isOverlayRunning = state.isOverlayRunning,
                             onRequestOverlayPermission = {
-                                val intent = Intent(
+                                val overlayIntent = Intent(
                                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                                     Uri.parse("package:${context.packageName}")
                                 )
-                                context.startActivity(intent)
+                                context.startActivity(overlayIntent)
                             },
                             onRequestAccessibility = {
-                                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                                context.startActivity(intent)
+                                val accessibilityIntent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                                context.startActivity(accessibilityIntent)
                             },
                             onRequestNotification = {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -305,18 +305,18 @@ fun MainScreen() {
                             },
                             onToggleOverlay = {
                                 if (state.isOverlayRunning) {
-                                    val intent = Intent(context, FloatingService::class.java).apply {
+                                    val stopIntent = Intent(context, FloatingService::class.java).apply {
                                         action = FloatingService.ACTION_STOP
                                     }
-                                    context.startService(intent)
+                                    context.startService(stopIntent)
                                 } else {
-                                    val intent = Intent(context, FloatingService::class.java).apply {
+                                    val startIntent = Intent(context, FloatingService::class.java).apply {
                                         action = FloatingService.ACTION_START
                                     }
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        context.startForegroundService(intent)
+                                        context.startForegroundService(startIntent)
                                     } else {
-                                        context.startService(intent)
+                                        context.startService(startIntent)
                                     }
                                 }
                             },

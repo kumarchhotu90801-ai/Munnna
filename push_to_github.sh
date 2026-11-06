@@ -6,28 +6,48 @@
 
 set -e
 
-echo "🚀 [Follow AI Auto] Initializing Git push sequence..."
+REPO_OWNER="kumarchhotu90801-ai"
+REPO_NAME="Munnna"
+DEFAULT_REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}.git"
 
-# 1. Check or prompt for GitHub Repository URL
-REPO_URL="$1"
-if [ -z "$REPO_URL" ]; then
-    echo ""
-    echo "Enter your target GitHub repository URL (HTTPS or SSH):"
-    echo "Example: https://github.com/your-username/follow-ai-auto.git"
-    read -r -p "Repository URL: " REPO_URL
+echo "🚀 [Follow AI Auto] Initializing Git push sequence for ${REPO_OWNER}/${REPO_NAME}..."
+
+# 1. Check if token or URL provided as argument
+ARG1="$1"
+GITHUB_TOKEN=""
+REPO_URL=""
+
+if [[ "$ARG1" =~ ^ghp_ ]] || [[ "$ARG1" =~ ^github_pat_ ]]; then
+    GITHUB_TOKEN="$ARG1"
+    REPO_URL="https://${GITHUB_TOKEN}@github.com/${REPO_OWNER}/${REPO_NAME}.git"
+elif [ -n "$ARG1" ]; then
+    REPO_URL="$ARG1"
+fi
+
+# If token is in GITHUB_TOKEN environment variable
+if [ -z "$REPO_URL" ] && [ -n "$GITHUB_TOKEN_ENV" ]; then
+    REPO_URL="https://${GITHUB_TOKEN_ENV}@github.com/${REPO_OWNER}/${REPO_NAME}.git"
 fi
 
 if [ -z "$REPO_URL" ]; then
-    echo "❌ Error: Repository URL is required. Aborting."
-    exit 1
+    echo ""
+    echo "Enter your GitHub Personal Access Token (PAT) with 'repo' scope:"
+    echo "(Or press Enter to attempt standard push with cached credentials/SSH)"
+    read -r -s -p "GitHub Token (hidden): " GITHUB_TOKEN
+    echo ""
+    if [ -n "$GITHUB_TOKEN" ]; then
+        REPO_URL="https://${GITHUB_TOKEN}@github.com/${REPO_OWNER}/${REPO_NAME}.git"
+    else
+        REPO_URL="$DEFAULT_REPO_URL"
+    fi
 fi
 
 # 2. Configure Git identity if not already set
 if [ -z "$(git config user.name)" ]; then
-    git config user.name "FollowAI Auto Developer"
+    git config user.name "kumarchhotu90801-ai"
 fi
 if [ -z "$(git config user.email)" ]; then
-    git config user.email "automator@followai.local"
+    git config user.email "kumarchhotu90801@gmail.com"
 fi
 
 # 3. Initialize Git repository if needed
@@ -49,20 +69,20 @@ git branch -M main
 echo "📂 Staging project files..."
 git add -A
 
-# Only commit if there are changes
+# Only commit if there are uncommitted changes
 if git status --porcelain | grep -q .; then
     echo "💾 Committing changes..."
-    git commit -m "feat: production Follow AI automation app with overlay, calibration, presets & CI/CD"
+    git commit -m "fix(app): resolve Kotlin compilation errors, missing imports, and align app dependencies"
 else
-    echo "ℹ️ No uncommitted changes detected."
+    echo "ℹ️ No uncommitted changes detected. Working tree clean."
 fi
 
 # 7. Add or update remote origin
 if git remote | grep -q "^origin$"; then
-    echo "🔄 Updating existing remote origin to $REPO_URL..."
+    echo "🔄 Updating existing remote origin..."
     git remote set-url origin "$REPO_URL"
 else
-    echo "🔗 Adding remote origin $REPO_URL..."
+    echo "🔗 Adding remote origin..."
     git remote add origin "$REPO_URL"
 fi
 
@@ -73,6 +93,6 @@ git push -u origin main
 echo ""
 echo "=============================================================================="
 echo "✅ Push successful! GitHub Actions is now building your Android APK."
-echo "👉 Check build progress in your GitHub repo under the 'Actions' tab."
+echo "👉 Check build progress in your GitHub repo: https://github.com/${REPO_OWNER}/${REPO_NAME}/actions"
 echo "📥 Download the compiled APK from the 'Artifacts' section once completed."
 echo "=============================================================================="
